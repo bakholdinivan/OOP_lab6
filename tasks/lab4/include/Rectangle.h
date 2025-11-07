@@ -13,6 +13,33 @@
 // - Диагонали равны и делятся пополам точкой пересечения
 template<Scalar T>
 class Rectangle : public Figure<T> {
+private:
+    // Проверка, что 4 точки образуют прямоугольник
+    // (противоположные стороны равны И диагонали равны)
+    bool isRectangle() const {
+        if (this->points.size() != 4) return false;
+        
+        // Вычисляем длины сторон и диагоналей
+        T side1 = this->distance(this->points[0], this->points[1]);
+        T side2 = this->distance(this->points[1], this->points[2]);
+        T side3 = this->distance(this->points[2], this->points[3]);
+        T side4 = this->distance(this->points[3], this->points[0]);
+        
+        T diag1 = this->distance(this->points[0], this->points[2]);
+        T diag2 = this->distance(this->points[1], this->points[3]);
+        
+        // Проверка с погрешностью для вещественных типов
+        if constexpr (std::is_floating_point_v<T>) {
+            const T epsilon = static_cast<T>(1e-6);
+            // Противоположные стороны равны И диагонали равны
+            return std::abs(side1 - side3) <= epsilon &&
+                   std::abs(side2 - side4) <= epsilon &&
+                   std::abs(diag1 - diag2) <= epsilon;
+        } else {
+            return side1 == side3 && side2 == side4 && diag1 == diag2;
+        }
+    }
+    
 public:
    
     // Конструктор дефолтный
@@ -58,6 +85,11 @@ public:
         
         // Упорядочиваем вершины для корректных вычислений
         this->sortPoints();
+        
+        // ПРОВЕРКА: точки должны образовывать прямоугольник (вписан в круг)
+        if (!isRectangle()) {
+            throw std::invalid_argument("Точки не образуют прямоугольник");
+        }
     }
     
 

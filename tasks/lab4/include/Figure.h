@@ -13,7 +13,7 @@
 template<Scalar T>
 class Figure {
 protected:
-\
+
     // Хранение вершин фигурф
 
     // unique_ptr - умный указатель с эксклюзивным владением
@@ -211,7 +211,13 @@ protected:
         return std::abs(sum) / static_cast<T>(2);  // Модуль и делим на 2
     }
     
-  
+  // Вспомогательная функция: расстояние между двумя точками
+    T distance(const std::unique_ptr<Point<T>>& p1, const std::unique_ptr<Point<T>>& p2) const {
+        T dx = p2->x - p1->x;
+        T dy = p2->y - p1->y;
+        return std::sqrt(dx * dx + dy * dy);
+    }
+
     // ВЫЧИСЛЕНИЕ ГЕОМЕТРИЧЕСКОГО ЦЕНТРА (ЦЕНТРА МАСС)
 
     // Центр = среднее арифметическое координат всех вершин

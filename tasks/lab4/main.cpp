@@ -22,25 +22,22 @@ void printMenu() {
 
 // Демонстрация: массив указателей на базовый класс (полиморфизм)
 void demoBaseType() {
-    cout << "\n=== Array<Figure<int>*> ===" << endl;
+    cout << "\n=== Array<shared_ptr<Figure<int>>> ===" << endl;
     
-    // Создаём массив указателей на базовый класс
-    Array<Figure<int>*> figs;
+    
+    Array<shared_ptr<Figure<int>>> figs;
     
     // Добавляем разные типы фигур через базовый указатель
-    figs.push(new Rectangle<int>());
-    figs.push(new Trapezoid<int>());
-    figs.push(new Rhombus<int>());
+    figs.push(make_shared<Rectangle<int>>());
+    figs.push(make_shared<Trapezoid<int>>());
+    figs.push(make_shared<Rhombus<int>>());
     
     cout << "Добавлено 3 фигуры\n" << endl;
     figs.printAll(cout);
     
     cout << "\nОбщая площадь: " << figs.totalArea() << endl;
     
-    // Освобождаем память (delete для каждого указателя)
-    for (size_t i = 0; i < figs.size(); ++i) {
-        delete figs[i];
-    }
+   
 }
 
 // Демонстрация: массив объектов конкретного типа

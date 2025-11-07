@@ -291,12 +291,12 @@ TEST(ComparisonTest, DifferentTypes) {
 // ТЕСТЫ ARRAY С УКАЗАТЕЛЯМИ НА FIGURE
 
 
-TEST(ArrayFigureTest, RawPointers) {
-    Array<Figure<int>*> figures;
+TEST(ArrayFigureTest, SharedPtrPolymorphism) {
+    Array<shared_ptr<Figure<int>>> figures;
     
-    figures.push(new Rectangle<int>());
-    figures.push(new Trapezoid<int>());
-    figures.push(new Rhombus<int>());
+    figures.push(make_shared<Rectangle<int>>());
+    figures.push(make_shared<Trapezoid<int>>());
+    figures.push(make_shared<Rhombus<int>>());
     
     EXPECT_EQ(figures.size(), 3);
     EXPECT_EQ(figures[0]->area(), 2);
@@ -306,9 +306,6 @@ TEST(ArrayFigureTest, RawPointers) {
     int total = figures.totalArea();
     EXPECT_EQ(total, 12);
     
-    for (size_t i = 0; i < figures.size(); ++i) {
-        delete figures[i];
-    }
 }
 
 TEST(ArrayFigureTest, SharedPtr) {
@@ -323,17 +320,13 @@ TEST(ArrayFigureTest, SharedPtr) {
 }
 
 TEST(ArrayFigureTest, MixedTypes) {
-    Array<Figure<int>*> figures;
+    Array<shared_ptr<Figure<int>>> figures;
     
-    figures.push(new Rectangle<int>());
-    figures.push(new Trapezoid<int>());
+    figures.push(make_shared<Rectangle<int>>());
+    figures.push(make_shared<Trapezoid<int>>());
     
     EXPECT_STREQ(figures[0]->getType(), "Rectangle");
     EXPECT_STREQ(figures[1]->getType(), "Trapezoid");
-    
-    for (size_t i = 0; i < figures.size(); ++i) {
-        delete figures[i];
-    }
 }
 
 // ТЕСТЫ ARRAY С ОБЪЕКТАМИ
@@ -398,27 +391,23 @@ TEST(MoveTest, UniquePtrInArray) {
 
 
 TEST(PolymorphismTest, BasePointer) {
-    Figure<int>* fig = new Rectangle<int>();
+    shared_ptr<Figure<int>> fig = make_shared<Rectangle<int>>();
     
     EXPECT_EQ(fig->area(), 2);
     EXPECT_STREQ(fig->getType(), "Rectangle");
     
-    delete fig;
 }
 
 TEST(PolymorphismTest, VirtualMethods) {
-    Figure<double>* figures[3];
-    figures[0] = new Rectangle<double>();
-    figures[1] = new Trapezoid<double>();
-    figures[2] = new Rhombus<double>();
+    Array<shared_ptr<Figure<double>>> figures;
+    
+    figures.push(make_shared<Rectangle<double>>());
+    figures.push(make_shared<Trapezoid<double>>());
+    figures.push(make_shared<Rhombus<double>>());
     
     EXPECT_STREQ(figures[0]->getType(), "Rectangle");
     EXPECT_STREQ(figures[1]->getType(), "Trapezoid");
     EXPECT_STREQ(figures[2]->getType(), "Rhombus");
-    
-    for (int i = 0; i < 3; ++i) {
-        delete figures[i];
-    }
 }
 
 
@@ -498,4 +487,80 @@ TEST(StressTest, ManyFigures) {
     
     EXPECT_EQ(figures.size(), 100);
     EXPECT_NEAR(figures.totalArea(), 200.0, 0.01);
+}
+
+// ===== ПРОВЕРКА ГЕОМЕТРИЧЕСКИХ СВОЙСТВ =====
+
+TEST(ValidationTest, RhombusInvalidSides) {
+    // Попытка создать "ромб" с неравными сторонами
+    Point<double> points[4] = {
+        Point<double>(0, 0),
+        Point<double>(5, 0),  // Длинная сторона
+        Point<double>(6, 1),
+        Point<double>(1, 1)
+    };
+    
+    EXPECT_THROW(Rhombus<double>(points, 4), std::invalid_argument);
+}
+
+TEST(ValidationTest, RhombusValidSides) {
+    // Правильный ромб - все стороны равны
+    Point<double> points[4] = {
+        Point<double>(2, 0),
+        Point<double>(0, 1),
+        Point<double>(-2, 0),
+        Point<double>(0, -1)
+    };
+    
+    EXPECT_NO_THROW(Rhombus<double>(points, 4));
+}
+
+TEST(ValidationTest, RectangleInvalidShape) {
+    // Попытка создать "прямоугольник" из неправильных точек
+    Point<double> points[4] = {
+        Point<double>(0, 0),
+        Point<double>(5, 0),
+        Point<double>(6, 3),  // Несимметричная точка
+        Point<double>(0, 3)
+    };
+    
+    EXPECT_THROW(Rectangle<double>(points, 4), std::invalid_argument);
+}
+
+TEST(ValidationTest, RectangleValidShape) {
+    // Правильный прямоугольник
+    Point<double> points[4] = {
+        Point<double>(0, 0),
+        Point<double>(4, 0),
+        Point<double>(4, 3),
+        Point<double>(0, 3)
+    };
+    
+    EXPECT_NO_THROW(Rectangle<double>(points, 4));
+}
+
+TEST(ValidationTest, TrapezoidNotInscribed) {
+    // Трапеция, которая НЕ вписана в круг
+    // Произвольная трапеция с явно неравными диагоналями
+    Point<double> points[4] = {
+        Point<double>(0, 0),
+        Point<double>(10, 0),
+        Point<double>(7, 3),   // Изменено с (8,5)
+        Point<double>(1, 3)    // Изменено с (2,5)
+    };
+    
+    EXPECT_THROW(Trapezoid<double>(points, 4), std::invalid_argument);
+}
+
+TEST(ValidationTest, TrapezoidInscribed) {
+    // Вписанная трапеция (равнобедренная с особыми пропорциями)
+    Point<double> points[4] = {
+        Point<double>(0, 0),
+        Point<double>(4, 0),
+        Point<double>(3, 2),
+        Point<double>(1, 2)
+    };
+    
+    // Эта трапеция может быть вписана в окружность
+    EXPECT_NO_THROW(Trapezoid<double>(points, 4));
 }
